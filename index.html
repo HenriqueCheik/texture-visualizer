@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Texture Visualizer</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+        <script src='https://git.io/glm-js.min.js'></script>
+        <script>
+            console.log('loaded glm-js version: ', glm.version);
+            // console.log('vec3 example: ', glm.vec3(1,2,3));
+        </script>
+        <script src="Shader.js"></script>
+        <script src="fileHandling.js"></script>
+        <script src="webGL.js"></script>
+    </head>
+    <body>
+        
+        <p> </p>
+        <canvas id="reliefMappingCanvas" width="800" height="600" style="border:1px solid #000000;"></canvas>
+        <p></p>
+        <img src="Textures/wood.png" width="50" height="50" id="colorTexture" alt="Current Color Texture">
+        <img src="Textures/toy_box_normal.png" width="50" height="50" id="normalTexture" alt="Current Normal Map">
+        <img src="Textures/toy_box_disp.png" width="50" height="50" id="displacementTexture" alt="Current Displacement Map">
+        <p></p>
+        <label for="colorTextureUpload">Change color texture:</label>
+        <input type="file" name="colorTextureUpload" id="colorTextureUpload">
+        <p></p>
+        <label for="normalTextureUpload">Change normal map:</label>
+        <input type="file" name="normalTextureUpload" id="normalTextureUpload">
+        <p></p>
+        <label for="displacementTextureUpload">Change displacement map:</label>
+        <input type="file" name="displacementTextureUpload" id="displacementTextureUpload">
+
+    </body>
+</html>
