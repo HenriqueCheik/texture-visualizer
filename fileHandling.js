@@ -1,5 +1,9 @@
+var colorTextureChanged = false;
+var normalTextureChanged = false;
+var displacementTextureChanged = false;
 
 $('document').ready(function(){
+
     var inputElement = $('#colorTextureUpload');
     // inputElement.addEventListener("change", handleFiles, false);
     inputElement.on("change", handleFiles);
@@ -24,14 +28,17 @@ $('document').ready(function(){
             if(this.id == "colorTextureUpload")
             {
                 var textureElement = $('#colorTexture');
+                colorTextureChanged = true;
             }
             else if(this.id == "normalTextureUpload")
             {
                 var textureElement = $('#normalTexture');
+                normalTextureChanged = true;
             }
             else if(this.id == "displacementTextureUpload")
             {
                 var textureElement = $('#displacementTexture');
+                displacementTextureChanged = true;
             }
             var imageURL = window.URL.createObjectURL(file);
             textureElement.attr('src', imageURL);
