@@ -63,6 +63,11 @@ class Shader
         gl.uniform3f(gl.getUniformLocation(this.id, uniformName), value[0], value[1], value[2]);
     }
 
+    setMat4(gl, uniformName, matrix)
+    {
+        gl.uniformMatrix4fv(gl.getUniformLocation(this.id, uniformName), false, matrix);
+    }
+
     // readFile(file)
     // {
     //     var fr = new FileReader();
@@ -88,38 +93,34 @@ class Shader
 
 var vertexShader = `#version 300 es
  
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
 in vec3 a_position;
 in vec2 a_textureCoords;
 
 out vec2 texCoords;
+
+uniform mat4 u_projection;
+uniform mat4 u_view;
+uniform mat4 u_model;
  
-// all shaders have a main function
 void main() {
  
-  // gl_Position is a special variable a vertex shader
-  // is responsible for setting
-  gl_Position = vec4(a_position, 1.0);
+
+  gl_Position = u_projection * u_view * u_model * vec4(a_position, 1.0);
   texCoords = a_textureCoords;
 }
 `;
 
 var fragmentShader = `#version 300 es
  
-// fragment shaders don't have a default precision so we need
-// to pick one. highp is a good default. It means "high precision"
 precision highp float;
 
 in vec2 texCoords;
  
 uniform sampler2D u_colorTexture;
 
-// we need to declare an output for the fragment shader
 out vec4 outColor;
  
 void main() {
-  // Just set the output to a constant reddish-purple
   outColor = texture(u_colorTexture, texCoords);
 }
 `;
