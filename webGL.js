@@ -36,7 +36,9 @@ function main()
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     // var reliefMappingShader = new Shader("Shaders/rtm.vert", "Shaders/rtm.frag", gl);
-    var reliefMappingShader = new Shader(vertexShader, fragmentShader, gl);
+    var testShader = new Shader(vertexShader, fragmentShader, gl);
+    var reliefMappingShader = new Shader(reliefMappingVertexShader, reliefMappingFragmentShader, gl);
+    
 
     var colorImage = document.getElementById('colorTexture');
     var normalImage = document.getElementById('normalTexture');
@@ -44,15 +46,15 @@ function main()
 
     var colorTexture = loadTexture(colorImage.src);
 
-    reliefMappingShader.use(gl);
-    reliefMappingShader.setInt(gl, "u_colorTexture", 0);
+    testShader.use(gl);
+    testShader.setInt(gl, "u_colorTexture", 0);
 
     // Shader data location
-    var positionAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_position");
-    var textureCoordsAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_textureCoords");
-    // var modelUniformLocation = gl.getUniformLocation(reliefMappingShader.id, "u_model");
-    // var viewUniformLocation = gl.getUniformLocation(reliefMappingShader.id, "u_view");
-    // var projectionUniformLocation = gl.getUniformLocation(reliefMappingShader.id, "u_projection");
+    var positionAttributeLocation = gl.getAttribLocation(testShader.id, "a_position");
+    var textureCoordsAttributeLocation = gl.getAttribLocation(testShader.id, "a_textureCoords");
+    // var modelUniformLocation = gl.getUniformLocation(testShader.id, "u_model");
+    // var viewUniformLocation = gl.getUniformLocation(testShader.id, "u_view");
+    // var projectionUniformLocation = gl.getUniformLocation(testShader.id, "u_projection");
     
     // Create a vertex array object (attribute state)
     var vao = gl.createVertexArray();
@@ -159,7 +161,7 @@ function main()
         // glActiveTexture(GL_TEXTURE1);
         // glBindTexture(GL_TEXTURE_2D, reliefTexture);
 
-        reliefMappingShader.use(gl);
+        testShader.use(gl);
 
         // model matrix
         // reset to identity
@@ -169,15 +171,15 @@ function main()
         mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 0, 1]);
         mat4.rotate(modelMatrix, modelMatrix, cubeRotation * 0.7, [0, 1, 0]);
 
-        reliefMappingShader.setMat4(gl, 'u_model', modelMatrix);
+        testShader.setMat4(gl, 'u_model', modelMatrix);
         
         // view matrix
         mat4.identity(viewMatrix);
-        reliefMappingShader.setMat4(gl, 'u_view', viewMatrix);
+        testShader.setMat4(gl, 'u_view', viewMatrix);
         
         // projection matrix
         mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
-        reliefMappingShader.setMat4(gl, 'u_projection', projectionMatrix);
+        testShader.setMat4(gl, 'u_projection', projectionMatrix);
 
         // Bind the attribute/buffer set we want.
         gl.bindVertexArray(vao);
