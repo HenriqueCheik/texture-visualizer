@@ -23,7 +23,7 @@ function main()
     const projectionMatrix = mat4.create();
 
     //------------------------------------------------------------//
-
+    var testCube = new Cube(gl);
 
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);   
 
@@ -31,23 +31,26 @@ function main()
 
     gl.enable(gl.DEPTH_TEST);
     // gl.enable(gl.CULL_FACE);
-
-    // Tell WebGL how to convert from clip space to pixels
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     // var reliefMappingShader = new Shader("Shaders/rtm.vert", "Shaders/rtm.frag", gl);
     var testShader = new Shader(vertexShader, fragmentShader, gl);
     var reliefMappingShader = new Shader(reliefMappingVertexShader, reliefMappingFragmentShader, gl);
     
-
+    // texture retrieving from html
     var colorImage = document.getElementById('colorTexture');
     var normalImage = document.getElementById('normalTexture');
     var displacementImage = document.getElementById('displacementTexture');
 
+    // texture creation from html image data
     var colorTexture = loadTexture(colorImage.src);
+    // var normalTexture = loadTexture(normalImage.src);
+    // var displacementTexture = loadTexture(displacementImage.src);
 
     testShader.use(gl);
     testShader.setInt(gl, "u_colorTexture", 0);
+    // reliefMappingShader.setInt(gl, "u_normalTexture", 1);
+    // reliefMappingShader.setInt(gl, "u_depthTexture", 2);
 
     // Shader data location
     var positionAttributeLocation = gl.getAttribLocation(testShader.id, "a_position");
@@ -56,42 +59,17 @@ function main()
     // var viewUniformLocation = gl.getUniformLocation(testShader.id, "u_view");
     // var projectionUniformLocation = gl.getUniformLocation(testShader.id, "u_projection");
     
-    // Create a vertex array object (attribute state)
     var vao = gl.createVertexArray();
-    // Create a buffer and put three 2d clip space points in it
     var positionBuffer = gl.createBuffer();
-    // Texture buffer
-    // var textureBuffer = gl.createBuffer();
-    // Buffer the element array data
-    // var indexBuffer = gl.createBuffer();
     
     // Bind VAO to buffer data
     gl.bindVertexArray(vao);
 
-    // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(CubeProperties.vertexData), gl.STATIC_DRAW);
-    
-    // var vertexData = [
-        //     // positions       // texture coords
-        //     -0.5,  0.5, 0.0,   0.0, 1.0,   // top left 
-        //     -0.5, -0.5, 0.0,   0.0, 0.0,   // bottom left
-        //      0.5, -0.5, 0.0,   1.0, 0.0,   // bottom right
-        
-        //     -0.5,  0.5, 0.0,   0.0, 1.0,   // top left
-        //      0.5, -0.5, 0.0,   1.0, 0.0,   // bottom right
-        //      0.5,  0.5, 0.0,   1.0, 1.0    // top right
-        // ];
-    
-    // gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-    // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(CubeProperties.textureCoordinates), gl.STATIC_DRAW);
-    
-        
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(CubeProperties.indices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Cube.vertexData), gl.STATIC_DRAW);
 
     var normalize = false;    // don't normalize the data
-    var stride = 5 * 4;       // A gl.FLOAT is 4 bytes and our vertexData has 5 floats per line. Stride is the same across this data
+    var stride = 8 * 4;       // A gl.FLOAT is 4 bytes and our vertexData has 5 floats per line. Stride is the same across this data
 
     // Position atributes
     var posSize = 3;          // number of components per line
@@ -110,34 +88,14 @@ function main()
     gl.enableVertexAttribArray(textureCoordsAttributeLocation);
     gl.vertexAttribPointer(textureCoordsAttributeLocation, texSize, texType, normalize, stride, texOffset);
 
-    // {
-    //     const numComponents = 3;
-    //     const type = gl.FLOAT;
-    //     const normalize = false;
-    //     const stride = 0;
-    //     const offset = 0;
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    //     gl.vertexAttribPointer(positionAttributeLocation, numComponents, type, normalize, stride, offset);
-    //     gl.enableVertexAttribArray(positionAttributeLocation);
-    // }
-
-    // {
-    //     const numComponents = 2;
-    //     const type = gl.FLOAT;
-    //     const normalize = false;
-    //     const stride = 0;
-    //     const offset = 0;
-    //     gl.bindBuffer(gl.ARRAY_BUFFER, textureBuffer);
-    //     gl.vertexAttribPointer(textureCoordsAttributeLocation, numComponents, type, normalize, stride, offset);
-    //     gl.enableVertexAttribArray(textureCoordsAttributeLocation);
-    // }
-
-
     // renderLoop
-    requestAnimationFrame(renderLoop);
-
     var lastFrameTime = 0;
     var cubeRotation = 0;
+
+    var cameraPos = [0.0, 0.0, 0.0];
+    var lightPos = [1.0, 0.5, -1.0];
+
+    requestAnimationFrame(renderLoop);
 
     function renderLoop(time)
     {
@@ -150,6 +108,16 @@ function main()
             colorTexture = loadTexture(colorImage.src);
             colorTextureChanged = false;
         }
+        if(normalTextureChanged)
+        {
+            // normalTexture = loadTexture(normalImage.src);
+            normalTextureChanged = false;
+        }
+        if(displacementTextureChanged)
+        {
+            // displacementTexture = loadTexture(displacementImage.src);
+            displacementTextureChanged = false;
+        }
 
         // Clear the canvas
         gl.clearColor(0.1, 0.1, 0.1, 1.0);
@@ -159,9 +127,15 @@ function main()
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, colorTexture);
         // glActiveTexture(GL_TEXTURE1);
-        // glBindTexture(GL_TEXTURE_2D, reliefTexture);
+        // glBindTexture(GL_TEXTURE_2D, normalTexture);
+        // glActiveTexture(GL_TEXTURE2);
+        // glBindTexture(GL_TEXTURE_2D, displacementTexture);
 
         testShader.use(gl);
+
+        // camera and light positions
+        // testShader.setVec3(gl, 'u_viewPos', cameraPos);
+        // testShader.setVec3(gl, 'u_lightPos', lightPos);
 
         // model matrix
         // reset to identity
@@ -185,16 +159,10 @@ function main()
         gl.bindVertexArray(vao);
 
         // draw
-        // const primitiveType = gl.TRIANGLES;
-        // const vertexCount = 36;
-        // const type = gl.UNSIGNED_SHORT;
-        // const offset = 0;
-        // gl.drawArrays(primitiveType, vertexCount, type, offset);
-
         var primitiveType = gl.TRIANGLES;
         var offset = 0;
-        var count = 36;
-        gl.drawArrays(primitiveType, offset, count);
+        var vertexCount = 36;
+        gl.drawArrays(primitiveType, offset, vertexCount);
 
         cubeRotation += deltaTime * 0.001;
 

@@ -2,11 +2,11 @@ var reliefMappingVertexShader = `#version 300 es
 
 precision highp float;
 
-in vec3 aPos;
-in vec3 aNormal;
-in vec2 aTexCoords;
-in vec3 aTangent;
-in vec3 aBitangent;
+in vec3 a_position;
+in vec3 a_normal;
+in vec2 a_textureCoords;
+in vec3 a_tangent;
+in vec3 a_bitangent;
 
 out vec3 TangentFragPos;
 out vec3 TangentLightPos;
@@ -16,31 +16,21 @@ out vec3 tangent;
 out vec3 biTangent;
 out vec3 normal;
 
-// out VS_OUT {
-//     vec3 TangentFragPos;
-//     vec3 TangentLightPos;
-//     vec3 TangentViewPos;
-//     vec2 texCoords;
-//     vec3 tangent;
-//     vec3 biTangent;
-//     vec3 normal;
-// } vs_out;
+uniform mat4 u_projection;
+uniform mat4 u_view;
+uniform mat4 u_model;
 
-uniform mat4 projection;
-uniform mat4 view;
-uniform mat4 model;
-
-uniform vec3 lightPos;
-uniform vec3 viewPos;
+uniform vec3 u_lightPos;
+uniform vec3 u_viewPos;
 
 void main()
 {
-    vec3 fragPos = vec3(model * vec4(aPos, 1.0));
-    texCoords = aTexCoords;   
+    vec3 fragPos = vec3(u_model * vec4(a_position, 1.0));
+    texCoords = a_textureCoords;   
     
-    vec3 T = normalize(mat3(model) * aTangent);
-    vec3 B = normalize(mat3(model) * aBitangent);
-    vec3 N = - normalize(mat3(model) * aNormal);
+    vec3 T = normalize(mat3(u_model) * a_tangent);
+    vec3 B = normalize(mat3(u_model) * a_bitangent);
+    vec3 N = - normalize(mat3(u_model) * a_normal);
     // TBN inverse transforms world space to tangent space
     mat3 TBN_inverse = transpose(mat3(T, B, N));
 
@@ -48,11 +38,11 @@ void main()
     biTangent = B;
     normal = N;
 
-    TangentLightPos = TBN_inverse * lightPos;
-    TangentViewPos  = TBN_inverse * viewPos;
+    TangentLightPos = TBN_inverse * u_lightPos;
+    TangentViewPos  = TBN_inverse * u_viewPos;
     TangentFragPos  = TBN_inverse * fragPos;
     
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    gl_Position = u_projection * u_view * u_model * vec4(a_position, 1.0);
 }
 `;
 
@@ -70,19 +60,9 @@ in vec3 normal;
 
 out vec4 finalColor;
 
-// in VS_OUT {
-//     vec3 TangentFragPos;
-//     vec3 TangentLightPos;
-//     vec3 TangentViewPos;
-//     vec2 texCoords;
-//     vec3 tangent;
-//     vec3 biTangent;
-//     vec3 normal;
-// } fs_in;
-
-uniform sampler2D colorTexture;
-uniform sampler2D normalTexture;
-uniform sampler2D depthTexture;
+uniform sampler2D u_colorTexture;
+uniform sampler2D u_normalTexture;
+uniform sampler2D u_depthTexture;
 
 // uniform float tile = 1.0;
 // uniform float depth = 0.3;
@@ -119,11 +99,11 @@ void main()
     dp = texCoords * tile;
 
     // get intersection distance
-    d = rayIntersectRm(depthTexture,dp,ds);
+    d = rayIntersectRm(u_depthTexture,dp,ds);
     // get normal and color at intersection point
     uv=dp+ds*d;
-    t=texture(normalTexture, uv);
-    c=texture(colorTexture, uv);
+    t=texture(u_normalTexture, uv);
+    c=texture(u_colorTexture, uv);
     t.xyz=t.xyz*2.0-1.0; // expand normal to eye space
     t.xyz=normalize(TBN * t.xyz);
     vec3 normal = t.xyz;
