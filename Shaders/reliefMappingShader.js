@@ -68,7 +68,7 @@ uniform sampler2D u_depthTexture;
 // uniform float depth = 0.3;
 
 float tile = 1.0;
-float depth = 0.3;
+float depth = 0.1;
 
 float rayIntersectRm(sampler2D depthTexture, vec2 dp, vec2 ds);
 
