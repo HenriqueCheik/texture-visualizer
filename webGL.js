@@ -137,12 +137,12 @@ function main()
         }
         if(normalTextureChanged)
         {
-            // normalTexture = loadTexture(normalImage.src);
+            normalTexture = loadTexture(normalImage.src);
             normalTextureChanged = false;
         }
         if(displacementTextureChanged)
         {
-            // displacementTexture = loadTexture(displacementImage.src);
+            displacementTexture = loadTexture(displacementImage.src);
             displacementTextureChanged = false;
         }
 
