@@ -44,17 +44,20 @@ function main()
 
     // texture creation from html image data
     var colorTexture = loadTexture(colorImage.src);
-    // var normalTexture = loadTexture(normalImage.src);
-    // var displacementTexture = loadTexture(displacementImage.src);
+    var normalTexture = loadTexture(normalImage.src);
+    var displacementTexture = loadTexture(displacementImage.src);
 
-    testShader.use(gl);
-    testShader.setInt(gl, "u_colorTexture", 0);
-    // reliefMappingShader.setInt(gl, "u_normalTexture", 1);
-    // reliefMappingShader.setInt(gl, "u_depthTexture", 2);
+    reliefMappingShader.use(gl);
+    reliefMappingShader.setInt(gl, "u_colorTexture", 0);
+    reliefMappingShader.setInt(gl, "u_normalTexture", 1);
+    reliefMappingShader.setInt(gl, "u_depthTexture", 2);
 
     // Shader data location
-    var positionAttributeLocation = gl.getAttribLocation(testShader.id, "a_position");
-    var textureCoordsAttributeLocation = gl.getAttribLocation(testShader.id, "a_textureCoords");
+    var positionAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_position");
+    var textureCoordsAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_textureCoords");
+    var normalAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_normal");
+    var tangentAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_tangent");
+    var bitangentAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_bitangent");
     // var modelUniformLocation = gl.getUniformLocation(testShader.id, "u_model");
     // var viewUniformLocation = gl.getUniformLocation(testShader.id, "u_view");
     // var projectionUniformLocation = gl.getUniformLocation(testShader.id, "u_projection");
@@ -66,20 +69,35 @@ function main()
     gl.bindVertexArray(vao);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(Cube.vertexData), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(testCube.data), gl.STATIC_DRAW);
 
     var normalize = false;    // don't normalize the data
-    var stride = 8 * 4;       // A gl.FLOAT is 4 bytes and our vertexData has 5 floats per line. Stride is the same across this data
+    var stride = testCube.stride;       // A gl.FLOAT is 4 bytes and our vertexData has 14 floats per line. Stride is the same across this data
 
-    // Position atributes
+    // Position attributes
     var posSize = 3;          // number of components per line
     var posType = gl.FLOAT;
     var posOffset = 0;        // start at the beginning of the buffer
 
-    // Texture coordinates atributes
+    // Texture coordinates attributes
     var texSize = 2;          // number of components per line
     var texType = gl.FLOAT;
     var texOffset = 3 * 4;    // start after position data
+
+    // Normal attributes
+    var normalSize = 3;
+    var normalType = gl.FLOAT;
+    var normalOffset = 5 * 4;
+
+    // Tangent attributes
+    var tangentSize = 3;
+    var tangentType = gl.FLOAT;
+    var tangentOffset = 8 * 4;
+
+    // Bitangent attributes
+    var bitangentSize = 3;
+    var bitangentType = gl.FLOAT;
+    var bitangentOffset = 11 * 4;
     
     // Turn on the attribute
     gl.enableVertexAttribArray(positionAttributeLocation);
@@ -87,6 +105,15 @@ function main()
 
     gl.enableVertexAttribArray(textureCoordsAttributeLocation);
     gl.vertexAttribPointer(textureCoordsAttributeLocation, texSize, texType, normalize, stride, texOffset);
+
+    gl.enableVertexAttribArray(normalAttributeLocation);
+    gl.vertexAttribPointer(normalAttributeLocation, normalSize, normalType, normalize, stride, normalOffset);
+
+    gl.enableVertexAttribArray(tangentAttributeLocation);
+    gl.vertexAttribPointer(tangentAttributeLocation, tangentSize, tangentType, normalize, stride, tangentOffset);
+
+    gl.enableVertexAttribArray(bitangentAttributeLocation);
+    gl.vertexAttribPointer(bitangentAttributeLocation, bitangentSize, bitangentType, normalize, stride, bitangentOffset);
 
     // renderLoop
     var lastFrameTime = 0;
@@ -126,16 +153,16 @@ function main()
         // activate texture(s)
         gl.activeTexture(gl.TEXTURE0);
         gl.bindTexture(gl.TEXTURE_2D, colorTexture);
-        // glActiveTexture(GL_TEXTURE1);
-        // glBindTexture(GL_TEXTURE_2D, normalTexture);
-        // glActiveTexture(GL_TEXTURE2);
-        // glBindTexture(GL_TEXTURE_2D, displacementTexture);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, normalTexture);
+        gl.activeTexture(gl.TEXTURE2);
+        gl.bindTexture(gl.TEXTURE_2D, displacementTexture);
 
-        testShader.use(gl);
+        reliefMappingShader.use(gl);
 
         // camera and light positions
-        // testShader.setVec3(gl, 'u_viewPos', cameraPos);
-        // testShader.setVec3(gl, 'u_lightPos', lightPos);
+        reliefMappingShader.setVec3(gl, 'u_viewPos', cameraPos);
+        reliefMappingShader.setVec3(gl, 'u_lightPos', lightPos);
 
         // model matrix
         // reset to identity
@@ -145,15 +172,15 @@ function main()
         mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 0, 1]);
         mat4.rotate(modelMatrix, modelMatrix, cubeRotation * 0.7, [0, 1, 0]);
 
-        testShader.setMat4(gl, 'u_model', modelMatrix);
+        reliefMappingShader.setMat4(gl, 'u_model', modelMatrix);
         
         // view matrix
         mat4.identity(viewMatrix);
-        testShader.setMat4(gl, 'u_view', viewMatrix);
+        reliefMappingShader.setMat4(gl, 'u_view', viewMatrix);
         
         // projection matrix
         mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
-        testShader.setMat4(gl, 'u_projection', projectionMatrix);
+        reliefMappingShader.setMat4(gl, 'u_projection', projectionMatrix);
 
         // Bind the attribute/buffer set we want.
         gl.bindVertexArray(vao);

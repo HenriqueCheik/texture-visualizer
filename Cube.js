@@ -19,8 +19,13 @@ class Cube
             const texCoord3 = [Cube.vertexData[i * this.stride + 19], Cube.vertexData[i * this.stride + 20]];
 
             var tempTangetBitangent = this.calculateTangentBitangent(vertex1, vertex2, vertex3, texCoord1, texCoord2, texCoord3, normal);
-            console.log(tempTangetBitangent);
+            
+
+            this.data = this.data.concat(vertex1, texCoord1, normal, tempTangetBitangent, vertex2, texCoord2, normal, tempTangetBitangent, vertex3, texCoord3, normal, tempTangetBitangent,)
         }
+        this.stride = (this.data.length / this.vertexCount) * 4;
+
+        // console.log(this.data);
 
         // this.calculateTangentBitangent([-0.5, -0.5, -0.5], [0.5, -0.5, -0.5], [0.5,  0.5, -0.5], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0, 0, 1]);
     }
