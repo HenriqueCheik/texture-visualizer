@@ -49,6 +49,7 @@ void main()
 var reliefMappingFragmentShader = `#version 300 es
 
 precision highp float;
+precision lowp int;
 
 in vec3 TangentFragPos;
 in vec3 TangentLightPos;
@@ -65,15 +66,38 @@ uniform sampler2D u_normalTexture;
 uniform sampler2D u_depthTexture;
 
 // uniform float tile = 1.0;
-// uniform float depth = 0.3;
+uniform float u_depth;
+
+uniform int u_technique;
 
 float tile = 1.0;
 float depth = 0.1;
 
+void reliefMappingTechnique();
 float rayIntersectRm(sampler2D depthTexture, vec2 dp, vec2 ds);
 
-
 void main()
+{
+    // normal mapping
+    if(u_technique == 3)
+    {
+        depth = 0.0;
+        reliefMappingTechnique();
+    }
+    // relief mapping
+    else if(u_technique == 4)
+    {
+        depth = u_depth;
+        reliefMappingTechnique();
+    }
+    // texture mapping
+    else
+    {
+        finalColor = texture(u_colorTexture, texCoords);
+    }
+}
+
+void reliefMappingTechnique()
 {
     // TBN transforms tangent space to world space
     mat3 TBN = mat3(tangent, biTangent, normal);
@@ -82,9 +106,6 @@ void main()
     vec3 lightPosViewSpace = TBN * TangentLightPos;
     vec3 fragPosViewSpace = TBN * TangentFragPos;
     vec3 viewPosViewSpace = TBN * TangentViewPos;
-
-
-
 
     //Relief mapping
     vec4 t,c; vec3 p,v,l,s; vec2 dp,ds,uv; float d;
@@ -96,6 +117,7 @@ void main()
     s = normalize(TangentFragPos - TangentViewPos); 
     // size and start position of search in texture space
     ds = s.xy / s.z * depth;
+    //ds = s.xy / s.z * u_depth;
     dp = texCoords * tile;
 
     // get intersection distance
@@ -106,7 +128,7 @@ void main()
     c=texture(u_colorTexture, uv);
     t.xyz=t.xyz*2.0-1.0; // expand normal to eye space
     t.xyz=normalize(TBN * t.xyz);
-    vec3 normal = t.xyz;
+    vec3 normal_vec = t.xyz;
     // compute light direction
 //    p += v*d*s.z;
 //    l = normalize(p - lightPosViewSpace);
@@ -115,13 +137,13 @@ void main()
     vec3 ambient = 0.1 * c.xyz;
     //diffuse
     vec3 lightDir = normalize(TangentLightPos - TangentFragPos);
-    float diff = max(dot(lightDir, normal), 0.0);
+    float diff = max(dot(lightDir, normal_vec), 0.0);
     vec3 diffuse = diff * c.xyz;
     // specular
     vec3 viewDir = normalize(TangentViewPos - TangentFragPos);
-    vec3 reflectDir = reflect(-lightDir, normal);
+    vec3 reflectDir = reflect(-lightDir, normal_vec);
     vec3 halfwayDir = normalize(lightDir + viewDir);  
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
+    float spec = pow(max(dot(normal_vec, halfwayDir), 0.0), 32.0);
 
     vec3 specular = vec3(0.2) * spec;
     finalColor = vec4(ambient + diffuse + specular, 1.0);

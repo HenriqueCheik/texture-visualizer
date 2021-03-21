@@ -1,40 +1,46 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>Texture Visualizer</title>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"
+
+<head>
+    <title>Texture Visualizer</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix-min.js"
         integrity="sha512-zhHQR0/H5SEBL3Wn6yYSaTTZej12z0hVZKOv3TwCUXT1z5qeqGcXJLLrbERYRScEDDpYIJhPC1fk31gqR783iQ=="
         crossorigin="anonymous" defer>
         </script>
-        <!-- <script src='https://git.io/glm-js.min.js'></script> -->
-        <!-- <script>
-            console.log('loaded glm-js version: ', glm.version);
-            // console.log('vec3 example: ', glm.vec3(1,2,3));
-        </script> -->
-        <script src="Cube.js"></script>
-        <script src="Shaders/reliefMappingShader.js"></script>
-        <script src="Shader.js"></script>
-        <script src="fileHandling.js"></script>
-        <script src="webGL.js"></script>
-    </head>
-    <body>
-        
-        <p> </p>
-        <canvas id="reliefMappingCanvas" width="800" height="600" style="border:1px solid #000000;"></canvas>
-        <p></p>
-        <img src="Textures/wood.png" width="50" height="50" id="colorTexture" alt="Current Color Texture">
-        <img src="Textures/toy_box_normal.png" width="50" height="50" id="normalTexture" alt="Current Normal Map">
-        <img src="Textures/toy_box_disp.png" width="50" height="50" id="displacementTexture" alt="Current Displacement Map">
-        <p></p>
-        <label for="colorTextureUpload">Change color texture:</label>
-        <input type="file" name="colorTextureUpload" id="colorTextureUpload">
-        <p></p>
-        <label for="normalTextureUpload">Change normal map:</label>
-        <input type="file" name="normalTextureUpload" id="normalTextureUpload">
-        <p></p>
-        <label for="displacementTextureUpload">Change displacement map:</label>
-        <input type="file" name="displacementTextureUpload" id="displacementTextureUpload">
+    <script src="Cube.js"></script>
+    <script src="Shaders/reliefMappingShader.js"></script>
+    <script src="Shader.js"></script>
+    <script src="fileHandling.js"></script>
+    <script src="webGL.js"></script>
+</head>
 
-    </body>
+<body>
+    <label for="mappingTechniques">Choose a mapping technique:</label>
+
+    <select name="mappingTechniques" id="mappingTechniquesDropdown">
+        <option value="1">Texture mapping</option>
+        <option value="2" hidden>Texture mapping with illumination</option>
+        <option value="3">Normal mapping</option>
+        <option value="4" selected="selected">Relief mapping</option>
+    </select>
+
+    <p> </p>
+    <canvas id="reliefMappingCanvas" width="1024" height="768" style="border:1px solid #000000;"></canvas>
+    <p id='FPS'>FPS: 0</p>
+    <img src="Textures/wood.png" width="50" height="50" id="colorTexture" alt="Current Color Texture">
+    <img src="Textures/toy_box_normal.png" width="50" height="50" id="normalTexture" alt="Current Normal Map">
+    <img src="Textures/toy_box_disp.png" width="50" height="50" id="displacementTexture" alt="Current Displacement Map">
+    <p></p>
+    <label for="colorTextureUpload">Change color texture:</label>
+    <input type="file" name="colorTextureUpload" id="colorTextureUpload">
+    <p></p>
+    <label for="normalTextureUpload">Change normal map:</label>
+    <input type="file" name="normalTextureUpload" id="normalTextureUpload">
+    <p></p>
+    <label for="displacementTextureUpload">Change displacement map:</label>
+    <input type="file" name="displacementTextureUpload" id="displacementTextureUpload">
+
+</body>
+
 </html>

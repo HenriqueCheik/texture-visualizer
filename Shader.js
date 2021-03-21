@@ -57,6 +57,10 @@ class Shader
     {
         gl.uniform1i(gl.getUniformLocation(this.id, uniformName), value);
     }
+    setFloat(gl, uniformName, value)
+    {
+        gl.uniform1f(gl.getUniformLocation(this.id, uniformName), value);
+    }
 
     setVec3(gl, uniformName, value)
     {

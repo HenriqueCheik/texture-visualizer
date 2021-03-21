@@ -22,6 +22,9 @@ function main()
     const viewMatrix = mat4.create();
     const projectionMatrix = mat4.create();
 
+    var depth = 0.1;
+    var pause = false;
+
     //------------------------------------------------------------//
     var testCube = new Cube(gl);
 
@@ -34,7 +37,7 @@ function main()
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     // var reliefMappingShader = new Shader("Shaders/rtm.vert", "Shaders/rtm.frag", gl);
-    var testShader = new Shader(vertexShader, fragmentShader, gl);
+    //var textureMappingShader = new Shader(textureMappingVertexShader, textureMappingFragmentShader, gl);
     var reliefMappingShader = new Shader(reliefMappingVertexShader, reliefMappingFragmentShader, gl);
     
     // texture retrieving from html
@@ -119,6 +122,9 @@ function main()
     var lastFrameTime = 0;
     var cubeRotation = 0;
 
+    var frameCounter = 0;
+    var secondsCounter = 0;
+
     var cameraPos = [0.0, 0.0, 0.0];
     var lightPos = [1.0, 0.5, -1.0];
 
@@ -129,6 +135,17 @@ function main()
         var currentFrameTime = time;
         deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
+
+        frameCounter++;
+        secondsCounter += deltaTime / 1000;
+        //console.log(secondsCounter);
+        if(secondsCounter > 1.0)
+        {
+            secondsCounter-= 1.0;
+            //console.log(frameCounter);
+            document.getElementById('FPS').innerHTML = "FPS: " + frameCounter;
+            frameCounter = 0;
+        }
 
         if(colorTextureChanged)
         {
@@ -160,6 +177,9 @@ function main()
 
         reliefMappingShader.use(gl);
 
+        // setting depth for relief mapping
+        reliefMappingShader.setFloat(gl, 'u_depth', depth);
+
         // camera and light positions
         reliefMappingShader.setVec3(gl, 'u_viewPos', cameraPos);
         reliefMappingShader.setVec3(gl, 'u_lightPos', lightPos);
@@ -182,6 +202,11 @@ function main()
         mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
         reliefMappingShader.setMat4(gl, 'u_projection', projectionMatrix);
 
+        // get which technique is being used to render
+
+        var technique = parseInt(document.getElementById('mappingTechniquesDropdown').value);
+        reliefMappingShader.setInt(gl, 'u_technique', technique);
+
         // Bind the attribute/buffer set we want.
         gl.bindVertexArray(vao);
 
@@ -191,33 +216,41 @@ function main()
         var vertexCount = 36;
         gl.drawArrays(primitiveType, offset, vertexCount);
 
-        cubeRotation += deltaTime * 0.001;
+        cubeRotation += deltaTime * 0.0006;
 
-        requestAnimationFrame(renderLoop);
+        if(!pause)
+        {
+            requestAnimationFrame(renderLoop);
+        }
     }
 
     function processInput(event)
     {
-        if(event.key == 'r')
+        if(event.key == 'q')
         {
-            // alert("red pressed");
-            // red = 1.0;
-            // green = 0.0;
-            // blue = 0.0;
+            depth -= 0.01;
+            if(depth < 0.0)
+            {
+                depth = 0.0;
+            }
         }
-        else if (event.key == 'g')
+        else if(event.key == 'e')
         {
-            // alert("green pressed");
-            // red = 0.0;
-            // green = 1.0;
-            // blue = 0.0;
+            depth += 0.01;
+            if(depth > 0.5)
+            {
+                depth = 0.5;
+            }
         }
-        else if (event.key == 'b')
+        else if (event.key == 'p')
         {
-            // alert("blue pressed");
-            // red = 0.0;
-            // green = 0.0;
-            // blue = 1.0;
+            pause = !pause;
+            if(!pause)
+            {
+                frameCounter = 0;
+                secondsCounter = 0;
+                requestAnimationFrame(renderLoop);
+            }
         }
     }
 
