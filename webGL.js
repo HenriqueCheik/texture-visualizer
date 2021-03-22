@@ -14,7 +14,8 @@ function main()
     }
 
     // global variables
-    const fieldOfView = 45 * Math.PI / 180;   // in radians
+    var fovValue = 45;
+    var fieldOfView = fovValue * Math.PI / 180;   // in radians
     const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
     const zNear = 0.1;
     const zFar = 100.0;
@@ -202,6 +203,7 @@ function main()
         reliefMappingShader.setMat4(gl, 'u_view', viewMatrix);
         
         // projection matrix
+        fieldOfView = fovValue * Math.PI / 180;
         mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
         reliefMappingShader.setMat4(gl, 'u_projection', projectionMatrix);
 
@@ -219,12 +221,12 @@ function main()
         var vertexCount = 36;
         gl.drawArrays(primitiveType, offset, vertexCount);
 
-        cubeRotation += deltaTime * 0.0006;
-
         if(!pause)
         {
-            requestAnimationFrame(renderLoop);
+            cubeRotation += deltaTime * 0.0006;
         }
+
+        requestAnimationFrame(renderLoop);
     }
 
     function processInput(event)
@@ -248,11 +250,27 @@ function main()
         else if (event.key == 'p')
         {
             pause = !pause;
-            if(!pause)
+            // if(!pause)
+            // {
+            //     frameCounter = 0;
+            //     secondsCounter = 0;
+            //     requestAnimationFrame(renderLoop);
+            // }
+        }
+        else if(event.key == '+')
+        {
+            fovValue -= 1.0;
+            if(fovValue < 1.0)
             {
-                frameCounter = 0;
-                secondsCounter = 0;
-                requestAnimationFrame(renderLoop);
+                fovValue = 1.0;
+            }
+        }
+        else if(event.key == '-')
+        {
+            fovValue += 1.0;
+            if(fovValue > 45.0)
+            {
+                fovValue = 45.0;
             }
         }
     }
