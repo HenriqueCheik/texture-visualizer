@@ -75,11 +75,17 @@ float depth = 0.1;
 
 void reliefMappingTechnique();
 float rayIntersectRm(sampler2D depthTexture, vec2 dp, vec2 ds);
+void textureMappingWithIllumination();
 
 void main()
 {
+    // texture mapping with illumination
+    if(u_technique == 2)
+    {
+        textureMappingWithIllumination();
+    }
     // normal mapping
-    if(u_technique == 3)
+    else if(u_technique == 3)
     {
         depth = 0.0;
         reliefMappingTechnique();
@@ -101,20 +107,16 @@ void reliefMappingTechnique()
 {
     // TBN transforms tangent space to world space
     mat3 TBN = mat3(tangent, biTangent, normal);
-    // TBN inverse transforms world space to tangent space
-    mat3 TBN_inverse = transpose(TBN);
-    vec3 lightPosViewSpace = TBN * TangentLightPos;
-    vec3 fragPosViewSpace = TBN * TangentFragPos;
-    vec3 viewPosViewSpace = TBN * TangentViewPos;
 
     //Relief mapping
-    vec4 t,c; vec3 p,v,l,s; vec2 dp,ds,uv; float d;
-    // ray intersect in view direction
-    p = fragPosViewSpace; // pixel position in eye space
-    v = normalize(viewPosViewSpace - p); // view vector in eye space
+    vec4 t,c;
+    vec3 s;
+    vec2 dp,ds,uv;
+    float d;
+
     // view vector in tangent space
-//    s = normalize(vec3(dot(v,tangent.xyz), dot(v,biTangent.xyz), dot(normal,-v)));
     s = normalize(TangentFragPos - TangentViewPos); 
+
     // size and start position of search in texture space
     ds = s.xy / s.z * depth;
     //ds = s.xy / s.z * u_depth;
@@ -122,6 +124,7 @@ void reliefMappingTechnique()
 
     // get intersection distance
     d = rayIntersectRm(u_depthTexture,dp,ds);
+
     // get normal and color at intersection point
     uv=dp+ds*d;
     t=texture(u_normalTexture, uv);
@@ -129,36 +132,23 @@ void reliefMappingTechnique()
     t.xyz=t.xyz*2.0-1.0; // expand normal to eye space
     t.xyz=normalize(TBN * t.xyz);
     vec3 normal_vec = t.xyz;
-    // compute light direction
-//    p += v*d*s.z;
-//    l = normalize(p - lightPosViewSpace);
 
     //ambient
     vec3 ambient = 0.1 * c.xyz;
+
     //diffuse
     vec3 lightDir = normalize(TangentLightPos - TangentFragPos);
     float diff = max(dot(lightDir, normal_vec), 0.0);
     vec3 diffuse = diff * c.xyz;
+
     // specular
     vec3 viewDir = normalize(TangentViewPos - TangentFragPos);
     vec3 reflectDir = reflect(-lightDir, normal_vec);
     vec3 halfwayDir = normalize(lightDir + viewDir);  
     float spec = pow(max(dot(normal_vec, halfwayDir), 0.0), 32.0);
-
     vec3 specular = vec3(0.2) * spec;
+
     finalColor = vec4(ambient + diffuse + specular, 1.0);
-
-    
-
-    // compute diffuse and specular terms
-//    float att = clamp(dot(-l,normal), 0.0, 1.0);
-//    float diff = clamp(dot(-l,t.xyz), 0.0, 1.0);
-//    float spec = clamp(dot(normalize(-l-v),t.xyz), 0.0, 1.0);
-
-//    finalColor = c;
-//    finalColor = ambient * c;
-//    finalColor.xyz += att * (c.xyz * diffuse.xyz * diff + specular.xyz * pow(spec,specular.w));
-//    finalColor.w = 1.0;
 }
 
 float rayIntersectRm(sampler2D depthTexture, vec2 dp, vec2 ds)
@@ -204,6 +194,38 @@ float rayIntersectRm(sampler2D depthTexture, vec2 dp, vec2 ds)
     return bestDepth;
 }
 
+void textureMappingWithIllumination()
+{
+    // TBN transforms tangent space to world space
+    mat3 TBN = mat3(tangent, biTangent, normal);
+    // TBN inverse transforms world space to tangent space
+    mat3 TBN_inverse = transpose(TBN);
+    vec3 lightPosViewSpace = TBN * TangentLightPos;
+    vec3 fragPosViewSpace = TBN * TangentFragPos;
+    vec3 viewPosViewSpace = TBN * TangentViewPos;
 
+
+    vec3 lightColor = vec3(1.0);
+    vec4 fragmentColor = texture(u_colorTexture, texCoords);
+
+    // ambient component
+    vec3 ambient = 0.1 * lightColor;
+
+    // diffuse component
+    vec3 lightDir = normalize(lightPosViewSpace - fragPosViewSpace);
+    float diff = max(dot(-normal, lightDir), 0.0);
+    vec3 diffuse = diff * lightColor;
+
+    // specular component
+    float specularStrength = 0.5;
+    vec3 viewDir = normalize(viewPosViewSpace - fragPosViewSpace);
+    vec3 reflectDir = reflect(-lightDir, -normal);  
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 specular = specularStrength * spec * lightColor;  
+
+
+    vec3 result = (ambient + diffuse + specular) * fragmentColor.xyz;
+    finalColor = vec4(result, 1.0);
+}
 
 `;
