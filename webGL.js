@@ -125,9 +125,6 @@ function main()
     var frameCounter = 0;
     var secondsCounter = 0;
 
-    var cameraPos = [0.0, 0.0, 0.0];
-    var lightPos = [1.0, 0.5, -1.0];
-
     requestAnimationFrame(renderLoop);
 
     function renderLoop(time)
@@ -181,6 +178,12 @@ function main()
         reliefMappingShader.setFloat(gl, 'u_depth', depth);
 
         // camera and light positions
+
+        var cameraPos = [0.0, 0.0, 0.0];
+        var lightPos = [parseFloat(document.getElementById('lightPosX').value),
+                        parseFloat(document.getElementById('lightPosY').value),
+                        parseFloat(document.getElementById('lightPosZ').value)];
+
         reliefMappingShader.setVec3(gl, 'u_viewPos', cameraPos);
         reliefMappingShader.setVec3(gl, 'u_lightPos', lightPos);
 

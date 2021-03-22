@@ -20,10 +20,19 @@
 
     <select name="mappingTechniques" id="mappingTechniquesDropdown">
         <option value="1">Texture mapping</option>
-        <option value="2"  selected="selected">Texture mapping with illumination</option>
+        <option value="2">Texture mapping with illumination</option>
         <option value="3">Normal mapping</option>
-        <option value="4">Relief mapping</option>
+        <option value="4" selected="selected">Relief mapping</option>
     </select>
+
+    <p></p>
+    <!-- min="10" max="20" step="2" -->
+    <label for="lightPosX">Light position X: </label>
+    <input id="lightPosX" type="number" value="1.0" step="0.1" name="lightPosX">
+    <label for="lightPosY">Y: </label>
+    <input id="lightPosY" type="number" value="0.5" step="0.1">
+    <label for="lightPosZ">Z: </label>
+    <input id="lightPosZ" type="number" value="-1.0" step="0.1">
 
     <p> </p>
     <canvas id="reliefMappingCanvas" width="1024" height="768" style="border:1px solid #000000;"></canvas>
