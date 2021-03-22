@@ -66,16 +66,14 @@ uniform sampler2D u_normalTexture;
 uniform sampler2D u_depthTexture;
 
 // uniform float tile = 1.0;
+float tile = 1.0;
 uniform float u_depth;
-
 uniform int u_technique;
 
-float tile = 1.0;
-float depth = 0.1;
-
-void reliefMappingTechnique();
-float rayIntersectRm(sampler2D depthTexture, vec2 dp, vec2 ds);
 void textureMappingWithIllumination();
+void normalMapping(vec2 uvCoordinates);
+void reliefMapping(int technique);
+vec3 rayIntersectRelief(sampler2D depthTexture, vec3 p, vec3 v);
 
 void main()
 {
@@ -87,111 +85,18 @@ void main()
     // normal mapping
     else if(u_technique == 3)
     {
-        depth = 0.0;
-        reliefMappingTechnique();
+        normalMapping(texCoords);
     }
     // relief mapping
     else if(u_technique == 4)
     {
-        depth = u_depth;
-        reliefMappingTechnique();
+        reliefMapping(4);
     }
     // texture mapping
     else
     {
         finalColor = texture(u_colorTexture, texCoords);
     }
-}
-
-void reliefMappingTechnique()
-{
-    // TBN transforms tangent space to world space
-    mat3 TBN = mat3(tangent, biTangent, normal);
-
-    //Relief mapping
-    vec4 t,c;
-    vec3 s;
-    vec2 dp,ds,uv;
-    float d;
-
-    // view vector in tangent space
-    s = normalize(TangentFragPos - TangentViewPos); 
-
-    // size and start position of search in texture space
-    ds = s.xy / s.z * depth;
-    //ds = s.xy / s.z * u_depth;
-    dp = texCoords * tile;
-
-    // get intersection distance
-    d = rayIntersectRm(u_depthTexture,dp,ds);
-
-    // get normal and color at intersection point
-    uv=dp+ds*d;
-    t=texture(u_normalTexture, uv);
-    c=texture(u_colorTexture, uv);
-    t.xyz=t.xyz*2.0-1.0; // expand normal to eye space
-    t.xyz=normalize(TBN * t.xyz);
-    vec3 normal_vec = t.xyz;
-
-    //ambient
-    vec3 ambient = 0.1 * c.xyz;
-
-    //diffuse
-    vec3 lightDir = normalize(TangentLightPos - TangentFragPos);
-    float diff = max(dot(lightDir, normal_vec), 0.0);
-    vec3 diffuse = diff * c.xyz;
-
-    // specular
-    vec3 viewDir = normalize(TangentViewPos - TangentFragPos);
-    vec3 reflectDir = reflect(-lightDir, normal_vec);
-    vec3 halfwayDir = normalize(lightDir + viewDir);  
-    float spec = pow(max(dot(normal_vec, halfwayDir), 0.0), 32.0);
-    vec3 specular = vec3(0.2) * spec;
-
-    finalColor = vec4(ambient + diffuse + specular, 1.0);
-}
-
-float rayIntersectRm(sampler2D depthTexture, vec2 dp, vec2 ds)
-{
-    const int linearSearchSteps = 10;
-    const int binarySearchSteps = 5;
-
-    // current size of search window
-    float depthStep = 1.0 / float(linearSearchSteps);
-
-    // current depth position
-    float currentDepth = 0.0; 
-
-    // best match found (starts with last position 1.0)
-    float bestDepth = 1.0;
-
-    // search from front to back for first point inside the object
-    for ( int i = 0; i < linearSearchSteps-1; i++)
-    {
-        currentDepth += depthStep;
-        vec4 t = texture(depthTexture, dp+ds*currentDepth);
-        if (bestDepth > 0.996)
-        {// if no depth found yet
-            if (currentDepth >= dot(t.xyz, vec3(0.2126, 0.7152, 0.0722)))
-            {
-                bestDepth = currentDepth; // store best depth
-            }
-        }
-    }
-    currentDepth = bestDepth;
-    // search around first point (depth) for closest match
-    for ( int i=0; i<binarySearchSteps;i++)
-    {
-        depthStep *= 0.5;
-        vec4 t = texture(depthTexture, dp+ds*currentDepth);
-        if (currentDepth >= dot(t.xyz, vec3(0.2126, 0.7152, 0.0722)))
-        {
-            bestDepth = currentDepth;
-            currentDepth -= 2.0 * depthStep;
-        }
-        currentDepth += depthStep;
-    }
-    return bestDepth;
 }
 
 void textureMappingWithIllumination()
@@ -227,5 +132,101 @@ void textureMappingWithIllumination()
     vec3 result = (ambient + diffuse + specular) * fragmentColor.xyz;
     finalColor = vec4(result, 1.0);
 }
+
+void normalMapping(vec2 uvCoordinates)
+{
+    vec4 t,c;
+
+    t=texture(u_normalTexture, uvCoordinates);
+    c=texture(u_colorTexture, uvCoordinates);
+
+    // TBN transforms tangent space to world space
+    mat3 TBN = mat3(tangent, biTangent, normal);
+
+    // expand normal to eye space
+    t.xyz=t.xyz*2.0-1.0;
+    t.xyz=normalize(TBN * t.xyz);
+    vec3 normal_vec = t.xyz;
+
+    //ambient
+    vec3 ambient = 0.1 * c.xyz;
+
+    //diffuse
+    vec3 lightDir = normalize(TangentLightPos - TangentFragPos);
+    float diff = max(dot(lightDir, normal_vec), 0.0);
+    vec3 diffuse = diff * c.xyz;
+
+    // specular
+    vec3 viewDir = normalize(TangentViewPos - TangentFragPos);
+    vec3 reflectDir = reflect(-lightDir, normal_vec);
+    vec3 halfwayDir = normalize(lightDir + viewDir);  
+    float spec = pow(max(dot(normal_vec, halfwayDir), 0.0), 32.0);
+    vec3 specular = vec3(0.2) * spec;
+
+    finalColor = vec4(ambient + diffuse + specular, 1.0);
+}
+
+void reliefMapping(int technique)
+{
+    vec2 uv;
+    if (u_depth > 0.0)
+    {
+        vec3 p = vec3(texCoords, 0.0);
+        vec3 v = normalize(TangentFragPos - TangentViewPos);
+        v.z = abs(v.z);
+    
+        v.xy *= u_depth;
+    
+        vec3 finalTexel = rayIntersectRelief(u_depthTexture, p, v);
+
+        uv = finalTexel.xy;
+    }
+    else
+    {
+        uv = texCoords;
+    }
+
+    // after finding the correct coordinates for the mapping
+    // proceed with normal mapping
+    normalMapping(uv);
+}
+
+vec3 rayIntersectRelief(sampler2D depthTexture, vec3 p, vec3 v)
+{
+	const int linearSearchSteps = 100;
+	const int binarySearchSteps = 50;
+	
+	v /= v.z*float(linearSearchSteps);
+	
+	for(int i=0; i<linearSearchSteps; i++)
+	{
+		vec4 tex = texture(depthTexture, p.xy);
+        float texDepth = dot(tex.xyz, vec3(0.2126, 0.7152, 0.0722));
+
+		if (p.z < texDepth)
+        {
+			p+=v;
+        }
+	}
+	
+	for(int i=0; i<binarySearchSteps; i++)
+	{
+		v *= 0.5;
+		vec4 tex = texture(depthTexture, p.xy);
+        float texDepth = dot(tex.xyz, vec3(0.2126, 0.7152, 0.0722));
+
+		if (p.z<texDepth)
+        {
+			p+=v;
+        }
+		else
+        {
+            p-=v;
+        }
+	}
+
+    return p;
+}
+
 
 `;
