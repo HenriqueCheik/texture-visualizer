@@ -9,6 +9,7 @@
         crossorigin="anonymous" defer>
         </script>
     <script src="Models/Cube.js"></script>
+    <script src="Models/Sphere.js"></script>
     <script src="Shaders/reliefMappingShader.js"></script>
     <script src="Shader.js"></script>
     <script src="fileHandling.js"></script>
@@ -23,6 +24,15 @@
         <option value="2">Texture mapping with illumination</option>
         <option value="3">Normal mapping</option>
         <option value="4" selected="selected">Relief mapping</option>
+    </select>
+
+    <p></p>
+
+    <label for="model">Choose a shape:</label>
+
+    <select name="model" id="modelDropdown">
+        <option value="1" selected="selected">Cube</option>
+        <option value="2">Sphere</option>
     </select>
 
     <p></p>

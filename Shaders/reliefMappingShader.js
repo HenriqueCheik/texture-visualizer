@@ -85,7 +85,7 @@ void main()
     // normal mapping
     else if(u_technique == 3)
     {
-        normalMapping(texCoords);
+        normalMapping(texCoords * tile);
     }
     // relief mapping
     else if(u_technique == 4)
@@ -171,7 +171,7 @@ void reliefMapping(int technique)
     vec2 uv;
     if (u_depth > 0.0)
     {
-        vec3 p = vec3(texCoords, 0.0);
+        vec3 p = vec3(texCoords, 0.0) * tile;
         vec3 v = normalize(TangentFragPos - TangentViewPos);
         v.z = abs(v.z);
     
@@ -183,7 +183,7 @@ void reliefMapping(int technique)
     }
     else
     {
-        uv = texCoords;
+        uv = texCoords * tile;
     }
 
     // after finding the correct coordinates for the mapping

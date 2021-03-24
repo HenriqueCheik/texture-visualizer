@@ -1,6 +1,6 @@
 class Cube
 {
-    constructor(gl)
+    constructor()
     {
         this.vertexCount = 36;
         this.stride = Cube.vertexData.length / this.vertexCount;
@@ -18,12 +18,14 @@ class Cube
             const vertex3 = [Cube.vertexData[i * this.stride + 16], Cube.vertexData[i * this.stride + 17], Cube.vertexData[i * this.stride + 18]];
             const texCoord3 = [Cube.vertexData[i * this.stride + 19], Cube.vertexData[i * this.stride + 20]];
 
-            var tempTangetBitangent = this.calculateTangentBitangent(vertex1, vertex2, vertex3, texCoord1, texCoord2, texCoord3, normal);
+            var tempTangentBitangent = this.calculateTangentBitangent(vertex1, vertex2, vertex3, texCoord1, texCoord2, texCoord3, normal);
             
 
-            this.data = this.data.concat(vertex1, texCoord1, normal, tempTangetBitangent, vertex2, texCoord2, normal, tempTangetBitangent, vertex3, texCoord3, normal, tempTangetBitangent,)
+            this.data = this.data.concat(vertex1, texCoord1, normal, tempTangentBitangent, vertex2, texCoord2, normal, tempTangentBitangent, vertex3, texCoord3, normal, tempTangentBitangent,)
         }
         this.stride = (this.data.length / this.vertexCount) * 4;
+
+        //console.log("Cube stride: " + this.stride);
     }
     static vertexData =
         // vextex pos        // tex coords    // vertex normal

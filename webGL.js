@@ -27,7 +27,9 @@ function main()
     var pause = false;
 
     //------------------------------------------------------------//
-    var testCube = new Cube(gl);
+    var modelCube = new Cube();
+    var modelSphere = new Sphere();
+    //console.log("Number of vertices on sphere: " + modelSphere.vertexCount);
 
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);   
 
@@ -62,21 +64,19 @@ function main()
     var normalAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_normal");
     var tangentAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_tangent");
     var bitangentAttributeLocation = gl.getAttribLocation(reliefMappingShader.id, "a_bitangent");
-    // var modelUniformLocation = gl.getUniformLocation(testShader.id, "u_model");
-    // var viewUniformLocation = gl.getUniformLocation(testShader.id, "u_view");
-    // var projectionUniformLocation = gl.getUniformLocation(testShader.id, "u_projection");
     
-    var vao = gl.createVertexArray();
-    var positionBuffer = gl.createBuffer();
+    // setting up cube VAO
+    var cubeVao = gl.createVertexArray();
+    var cubeDataBuffer = gl.createBuffer();
     
     // Bind VAO to buffer data
-    gl.bindVertexArray(vao);
+    gl.bindVertexArray(cubeVao);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(testCube.data), gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeDataBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelCube.data), gl.STATIC_DRAW);
 
     var normalize = false;    // don't normalize the data
-    var stride = testCube.stride;       // A gl.FLOAT is 4 bytes and our vertexData has 14 floats per line. Stride is the same across this data
+    var stride = modelCube.stride;       // A gl.FLOAT is 4 bytes and our vertexData has 14 floats per line. Stride is the same across this data
 
     // Position attributes
     var posSize = 3;          // number of components per line
@@ -103,7 +103,34 @@ function main()
     var bitangentType = gl.FLOAT;
     var bitangentOffset = 11 * 4;
     
-    // Turn on the attribute
+    // Turn on cube attributes
+    gl.enableVertexAttribArray(positionAttributeLocation);
+    gl.vertexAttribPointer(positionAttributeLocation, posSize, posType, normalize, stride, posOffset);
+
+    gl.enableVertexAttribArray(textureCoordsAttributeLocation);
+    gl.vertexAttribPointer(textureCoordsAttributeLocation, texSize, texType, normalize, stride, texOffset);
+
+    gl.enableVertexAttribArray(normalAttributeLocation);
+    gl.vertexAttribPointer(normalAttributeLocation, normalSize, normalType, normalize, stride, normalOffset);
+
+    gl.enableVertexAttribArray(tangentAttributeLocation);
+    gl.vertexAttribPointer(tangentAttributeLocation, tangentSize, tangentType, normalize, stride, tangentOffset);
+
+    gl.enableVertexAttribArray(bitangentAttributeLocation);
+    gl.vertexAttribPointer(bitangentAttributeLocation, bitangentSize, bitangentType, normalize, stride, bitangentOffset);
+
+    // setting up sphere VAO
+    var sphereVAO = gl.createVertexArray();
+    var sphereDataBuffer = gl.createBuffer();
+
+    stride = modelSphere.stride;
+
+    gl.bindVertexArray(sphereVAO);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, sphereDataBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelSphere.data), gl.STATIC_DRAW);
+
+    // Turn on sphere attributes
     gl.enableVertexAttribArray(positionAttributeLocation);
     gl.vertexAttribPointer(positionAttributeLocation, posSize, posType, normalize, stride, posOffset);
 
@@ -121,7 +148,7 @@ function main()
 
     // renderLoop
     var lastFrameTime = 0;
-    var cubeRotation = 0;
+    var rotation = 0;
 
     var frameCounter = 0;
     var secondsCounter = 0;
@@ -136,11 +163,9 @@ function main()
 
         frameCounter++;
         secondsCounter += deltaTime / 1000;
-        //console.log(secondsCounter);
         if(secondsCounter > 1.0)
         {
             secondsCounter-= 1.0;
-            //console.log(frameCounter);
             document.getElementById('FPS').innerHTML = "FPS: " + frameCounter;
             frameCounter = 0;
         }
@@ -160,6 +185,9 @@ function main()
             displacementTexture = loadTexture(displacementImage.src);
             displacementTextureChanged = false;
         }
+
+        // Render acording to chosen shape
+        var model = parseInt(document.getElementById('modelDropdown').value);
 
         // Clear the canvas
         gl.clearColor(0.1, 0.1, 0.1, 1.0);
@@ -192,9 +220,14 @@ function main()
         // reset to identity
         mat4.identity(modelMatrix);
         mat4.translate(modelMatrix, modelMatrix, [0.0, 0.0, -3.0]);
-        // mat4.scale(modelMatrix, modelMatrix, [0.2, 0.2, 0.2]);
-        mat4.rotate(modelMatrix, modelMatrix, cubeRotation, [0, 0, 1]);
-        mat4.rotate(modelMatrix, modelMatrix, cubeRotation * 0.7, [0, 1, 0]);
+
+        // scale down if its a sphere
+        if(model == 2)
+        {
+            mat4.scale(modelMatrix, modelMatrix, [0.8, 0.8, 0.8]);
+        }
+        mat4.rotate(modelMatrix, modelMatrix, rotation, [0, 0, 1]);
+        mat4.rotate(modelMatrix, modelMatrix, rotation * 0.7, [0, 1, 0]);
 
         reliefMappingShader.setMat4(gl, 'u_model', modelMatrix);
         
@@ -203,7 +236,6 @@ function main()
         reliefMappingShader.setMat4(gl, 'u_view', viewMatrix);
         
         // projection matrix
-        fieldOfView = fovValue * Math.PI / 180;
         mat4.perspective(projectionMatrix, fieldOfView, aspect, zNear, zFar);
         reliefMappingShader.setMat4(gl, 'u_projection', projectionMatrix);
 
@@ -212,18 +244,35 @@ function main()
         var technique = parseInt(document.getElementById('mappingTechniquesDropdown').value);
         reliefMappingShader.setInt(gl, 'u_technique', technique);
 
-        // Bind the attribute/buffer set we want.
-        gl.bindVertexArray(vao);
+        
 
-        // draw
-        var primitiveType = gl.TRIANGLES;
-        var offset = 0;
-        var vertexCount = 36;
-        gl.drawArrays(primitiveType, offset, vertexCount);
+        // sphere
+        if(model == 2)
+        {
+            gl.bindVertexArray(sphereVAO);
+    
+            // draw
+            var primitiveType = gl.TRIANGLES;
+            var offset = 0;
+            var vertexCount = modelSphere.vertexCount;
+            gl.drawArrays(primitiveType, offset, vertexCount);
+        }
+
+        // cube
+        else{
+            // Bind the attribute/buffer set we want.
+            gl.bindVertexArray(cubeVao);
+    
+            // draw
+            var primitiveType = gl.TRIANGLES;
+            var offset = 0;
+            var vertexCount = modelCube.vertexCount;
+            gl.drawArrays(primitiveType, offset, vertexCount);
+        }
 
         if(!pause)
         {
-            cubeRotation += deltaTime * 0.0006;
+            rotation += deltaTime * 0.0006;
         }
 
         requestAnimationFrame(renderLoop);
@@ -250,12 +299,6 @@ function main()
         else if (event.key == 'p')
         {
             pause = !pause;
-            // if(!pause)
-            // {
-            //     frameCounter = 0;
-            //     secondsCounter = 0;
-            //     requestAnimationFrame(renderLoop);
-            // }
         }
         else if(event.key == '+')
         {
@@ -264,6 +307,7 @@ function main()
             {
                 fovValue = 1.0;
             }
+            fieldOfView = fovValue * Math.PI / 180;
         }
         else if(event.key == '-')
         {
@@ -272,6 +316,7 @@ function main()
             {
                 fovValue = 45.0;
             }
+            fieldOfView = fovValue * Math.PI / 180;
         }
     }
 
